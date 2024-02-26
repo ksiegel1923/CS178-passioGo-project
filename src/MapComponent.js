@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   GoogleMap,
   useJsApiLoader,
@@ -33,6 +33,7 @@ function MapComponent() {
   const [destinationCoordinates, setDestinationCoordinates] = useState(null);
   const [myLocation, setMyLocation] = useState("");
   const [destination, setDestination] = useState("");
+  const [directions, setDirections] = useState("");
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -87,6 +88,17 @@ function MapComponent() {
     }
   }
 
+  const directionsCallback = useCallback((result, status) => {
+    if (result !== null) {
+      if (status === "OK") {
+        setDirections(result);
+        // console.log(result);
+      } else {
+        console.log("response: ", result);
+      }
+    }
+  }, []);
+
   return isLoaded ? (
     <Box>
       <Box component="form" noValidate sx={{ mt: 1 }}>
@@ -120,19 +132,23 @@ function MapComponent() {
         onLoad={onLoad}
         onUnmount={onUnmount}
       >
-        {/* <Marker position={coordinates} /> */}
-        {/* {console.log(coordinates)}
-        <Marker position={{ lat: coordinates?.lat, lng: coordinates?.lng }} /> */}
-        {currentCoordinates ? <Marker position={currentCoordinates} /> : <></>}
+        {/* {currentCoordinates ? <Marker position={currentCoordinates} /> : <></>}
         {destinationCoordinates ? (
           <Marker position={destinationCoordinates} />
         ) : (
           <></>
         )}
-        {/* <Marker position={{ lat: -3.745, lng: -38.523 }} /> */}
-        <></>
+        <></> */}
         {currentCoordinates && destinationCoordinates ? (
           <Box>
+            <DirectionsService
+              options={{
+                origin: currentCoordinates,
+                destination: destinationCoordinates,
+                travelMode: "DRIVING",
+              }}
+              callback={directionsCallback}
+            />
             <DistanceMatrixService
               options={{
                 destinations: [destinationCoordinates],
@@ -140,31 +156,23 @@ function MapComponent() {
                 travelMode: "WALKING",
               }}
               callback={(response) => {
-                console.log(response);
-                //Distance between two locations
-                console.log(response.rows[0].elements[0].distance.text);
-                // Time it takes to walk between two location
-                console.log(response.rows[0].elements[0].duration.text);
+                // console.log(response);
+                // //Distance between two locations
+                // console.log(response.rows[0].elements[0].distance.text);
+                // // Time it takes to walk between two location
+                // console.log(response.rows[0].elements[0].duration.text);
               }}
             />
-            {console.log("hi")}
-            <DirectionsService
-              options={{
-                destination: [destinationCoordinates],
-                origin: [currentCoordinates],
-                travelMode: "DRIVING",
-              }}
-              callback={(result, status) => {
-                console.log(result);
-                // this.setState({
-                //     directions: result
-                // });
-              }}
-            />
-            {console.log("bye")}
           </Box>
         ) : (
           <></>
+        )}
+        {directions && (
+          <DirectionsRenderer
+            options={{
+              directions: directions,
+            }}
+          />
         )}
       </GoogleMap>
     </Box>
